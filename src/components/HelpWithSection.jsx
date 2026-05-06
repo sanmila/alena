@@ -23,18 +23,28 @@ function HelpWithSection({ section }) {
           </div>
 
           <div className="grid gap-x-8 gap-y-1 sm:grid-cols-2 lg:pt-1">
-            {section.items.map((item, index) => (
+            {section.items.map((item, index) => {
+              const isString = typeof item === 'string';
+              const title = isString ? item : item.title;
+              const text = isString ? null : item.text;
+              return (
               <div
-                key={item}
-                className={`flex min-h-18 items-center border-line py-4 sm:min-h-22 sm:py-5 ${
+                key={title}
+                className={`flex min-h-18 flex-col justify-center border-line py-4 sm:min-h-22 sm:py-5 ${
                   index < section.items.length - 2 ? 'border-b' : ''
                 }`}
               >
                 <p className="max-w-[13rem] font-serif text-[1.55rem] leading-[1.08] text-charcoal sm:text-[1.75rem] lg:text-[1.9rem]">
-                  {item}
+                  {title}
                 </p>
+                {text && (
+                  <p className="mt-2.5 max-w-[16rem] text-[0.8rem] leading-snug text-charcoal-soft/90">
+                    {text}
+                  </p>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       </Container>

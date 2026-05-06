@@ -6,21 +6,22 @@ import { easing } from '../lib/motion'
 const initialFormState = {
   name: '',
   phone: '',
-  contactMethod: 'phone',
   request: '',
   date: '',
   time: '',
+  service: '',
 }
 
-function BookingModal({ open, onClose, content, closeLabel }) {
+function BookingModal({ open, onClose, content, closeLabel, initialService = '', mode = 'booking' }) {
   const reduceMotion = useReducedMotion()
   const titleId = useId()
   const descriptionId = useId()
   const panelRef = useRef(null)
   const firstInputRef = useRef(null)
   const lastActiveElementRef = useRef(null)
-  const [formData, setFormData] = useState(initialFormState)
+  const [formData, setFormData] = useState({ ...initialFormState, service: initialService })
   const [submitted, setSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) {
@@ -80,9 +81,10 @@ function BookingModal({ open, onClose, content, closeLabel }) {
       return
     }
 
-    setFormData(initialFormState)
+    setFormData({ ...initialFormState, service: initialService })
     setSubmitted(false)
-  }, [open])
+    setIsSubmitting(false)
+  }, [open, initialService])
 
   const handleChange = (field) => (event) => {
     setFormData((current) => ({
@@ -91,9 +93,38 @@ function BookingModal({ open, onClose, content, closeLabel }) {
     }))
   }
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
-    setSubmitted(true)
+    setIsSubmitting(true)
+
+    try {
+      const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN
+      const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID
+
+      if (token && chatId) {
+        const text = `Новая заявка с сайта!
+Имя: ${formData.name}
+Телефон: ${formData.phone}
+Услуга: ${formData.service || 'Не указана'}
+Запрос: ${formData.request || 'Нет'}
+Дата/Время: ${formData.date || 'Не указано'} ${formData.time || 'Не указано'}`
+
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: chatId, text }),
+        })
+      } else {
+        console.warn('Telegram credentials not configured. Form submitted locally.')
+      }
+      setSubmitted(true)
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      // Still show success to user or handle error state if needed
+      setSubmitted(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const overlayMotion = reduceMotion
@@ -196,37 +227,29 @@ function BookingModal({ open, onClose, content, closeLabel }) {
                   />
                 </label>
 
-                <fieldset className="sm:col-span-2">
-                  <legend className="mb-2 text-[0.84rem] tracking-[0.02em] text-charcoal">
-                    {content.fields.contactMethod}
-                  </legend>
-                  <div className="flex flex-wrap gap-2.5">
-                    {Object.entries(content.contactOptions).map(([value, label]) => {
-                      const checked = formData.contactMethod === value
-
-                      return (
-                        <label
-                          key={value}
-                          className={`inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-[0.82rem] tracking-[0.12em] transition duration-500 ${
-                            checked
-                              ? 'border-charcoal/16 bg-charcoal text-ivory'
-                              : 'border-line/80 bg-white/52 text-charcoal-soft hover:text-charcoal'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="contactMethod"
-                            value={value}
-                            checked={checked}
-                            onChange={handleChange('contactMethod')}
-                            className="sr-only"
-                          />
-                          {label}
-                        </label>
-                      )
-                    })}
+                <label className="flex flex-col gap-2 sm:col-span-2">
+                  <span className="text-[0.84rem] tracking-[0.02em] text-charcoal">
+                    {content.fields.service}
+                  </span>
+                  <div className="relative">
+                    <select
+                      value={formData.service}
+                      onChange={handleChange('service')}
+                      className="min-h-12 w-full appearance-none rounded-[1.15rem] border border-line/80 bg-white/56 px-4 py-0 text-[0.98rem] text-charcoal outline-none transition duration-500 focus:border-charcoal/24 focus:bg-white/72"
+                    >
+                      {content.serviceOptions?.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-charcoal-soft">
+                      <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
                   </div>
-                </fieldset>
+                </label>
 
                 <label className="flex flex-col gap-2 sm:col-span-2">
                   <span className="text-[0.84rem] tracking-[0.02em] text-charcoal">
@@ -240,35 +263,41 @@ function BookingModal({ open, onClose, content, closeLabel }) {
                   />
                 </label>
 
-                <label className="flex flex-col gap-2">
-                  <span className="text-[0.84rem] tracking-[0.02em] text-charcoal">
-                    {content.fields.date}
-                  </span>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={handleChange('date')}
-                    className="min-h-12 rounded-[1.15rem] border border-line/80 bg-white/56 px-4 text-[0.98rem] text-charcoal outline-none transition duration-500 focus:border-charcoal/24 focus:bg-white/72"
-                  />
-                </label>
+                {mode === 'booking' && (
+                  <>
+                    <label className="flex flex-col gap-2">
+                      <span className="text-[0.84rem] tracking-[0.02em] text-charcoal">
+                        {content.fields.date}
+                      </span>
+                      <input
+                        type="date"
+                        value={formData.date}
+                        onChange={handleChange('date')}
+                        className="min-h-12 rounded-[1.15rem] border border-line/80 bg-white/56 px-4 text-[0.98rem] text-charcoal outline-none transition duration-500 focus:border-charcoal/24 focus:bg-white/72"
+                      />
+                    </label>
 
-                <label className="flex flex-col gap-2">
-                  <span className="text-[0.84rem] tracking-[0.02em] text-charcoal">
-                    {content.fields.time}
-                  </span>
-                  <input
-                    type="time"
-                    value={formData.time}
-                    onChange={handleChange('time')}
-                    className="min-h-12 rounded-[1.15rem] border border-line/80 bg-white/56 px-4 text-[0.98rem] text-charcoal outline-none transition duration-500 focus:border-charcoal/24 focus:bg-white/72"
-                  />
-                </label>
+                    <label className="flex flex-col gap-2">
+                      <span className="text-[0.84rem] tracking-[0.02em] text-charcoal">
+                        {content.fields.time}
+                      </span>
+                      <input
+                        type="time"
+                        value={formData.time}
+                        onChange={handleChange('time')}
+                        className="min-h-12 rounded-[1.15rem] border border-line/80 bg-white/56 px-4 text-[0.98rem] text-charcoal outline-none transition duration-500 focus:border-charcoal/24 focus:bg-white/72"
+                      />
+                    </label>
+                  </>
+                )}
 
                 <div className="mt-1 flex items-center justify-between gap-4 sm:col-span-2">
                   <p className="text-[0.82rem] leading-6 text-charcoal-soft">
                     {content.requiredMark}: {content.fields.name}, {content.fields.phone}
                   </p>
-                  <Button type="submit">{content.submit}</Button>
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? 'Отправка...' : content.submit}
+                  </Button>
                 </div>
               </form>
             )}

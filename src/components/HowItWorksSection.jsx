@@ -40,7 +40,7 @@ function HowItWorksSection({ section }) {
                   <span className="font-serif text-[2.35rem] leading-none text-charcoal/40 sm:text-[2.6rem]">
                     {step.number}
                   </span>
-                  <p className="mt-3 max-w-[13rem] font-sans text-[0.98rem] leading-7 text-charcoal sm:mt-3.5 sm:text-[1.02rem]">
+                  <p className="mt-3 whitespace-pre-line max-w-[13rem] font-sans text-[0.98rem] leading-7 text-charcoal sm:mt-3.5 sm:text-[1.02rem]">
                     {step.label}
                   </p>
                 </li>

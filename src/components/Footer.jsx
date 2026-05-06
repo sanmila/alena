@@ -58,6 +58,7 @@ function Footer({ meta, navigation, contact, ui }) {
             </p>
             <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-2">
               <ContactItem item={contact.phone} />
+              <ContactItem item={contact.email} />
               <ContactItem item={contact.vk} />
               <div className="flex flex-col gap-2">
                 <dt className="text-[0.74rem] uppercase tracking-[0.18em] text-charcoal-soft">

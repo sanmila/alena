@@ -5,6 +5,13 @@ import heroImage from './assets/images/hero.webp'
 
 function App() {
   const [language, setLanguage] = useState(defaultLanguage)
+  const [currentHash, setCurrentHash] = useState(window.location.hash)
+
+  useEffect(() => {
+    const handleHashChange = () => setCurrentHash(window.location.hash)
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
 
   useEffect(() => {
     const content = siteContent[language]
@@ -26,7 +33,9 @@ function App() {
     setMeta('meta[property="og:image"]', heroImage)
   }, [language])
 
-  return <HomePage language={language} onLanguageChange={setLanguage} />
+  const view = currentHash === '#/certificates' ? 'certificates' : 'home'
+
+  return <HomePage language={language} onLanguageChange={setLanguage} view={view} />
 }
 
 export default App
