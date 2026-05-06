@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import HomePage from './pages/HomePage'
 import { defaultLanguage, siteContent } from './content/siteContent'
-import heroImage from './assets/images/hero.webp'
 
 function App() {
   const [language, setLanguage] = useState(defaultLanguage)
@@ -30,7 +29,6 @@ function App() {
     setMeta('meta[name="description"]', content.meta.description)
     setMeta('meta[property="og:title"]', content.meta.ogTitle)
     setMeta('meta[property="og:description"]', content.meta.ogDescription)
-    setMeta('meta[property="og:image"]', heroImage)
   }, [language])
 
   const view = currentHash === '#/certificates' ? 'certificates' : 'home'
